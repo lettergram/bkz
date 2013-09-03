@@ -7,7 +7,7 @@ require './amazon.rb'
 
 opts = Trollop::options do
   opt :title, "Title of book ", :type => :string
-	opt :author, "Last name of author ", :type => :string
+  opt :author, "Last name of author ", :type => :string
   opt :rating, "How many stars would you rate this title?", :type => :integer
   opt :recommendations, "How many people have recommended this book?", :type => :integer, :default => 0
   opt :citations, "Force citation count", :type => :integer
@@ -47,8 +47,8 @@ def error(str)
   exit
 end
 
-def getcitations(title)
-  scholar_results = CSV::parse(`python2 scholar.py --csv -c 1 "#{title}"`, :col_sep => "|")
+def getcitations(title, author)
+  scholar_results = CSV::parse(`python2 scholar.py --csv -c 1 "#{title}" "#{author}"`, :col_sep => "|")
  
   if scholar_results[0][0].downcase.include?("cite") then
     error("scholar.py failed to parse citations for this entry. Please retry with a forced citation number via --citations. ")
@@ -61,12 +61,12 @@ def getcitations(title)
 end
 
 def add(title, author, citations_opt, recommendations, rating, db)
-  goodreads_data = goodreads_search(title)
+  goodreads_data = goodreads_search(title, author)
 	#TODO check
   amazon_data = amazon_search(title, author)
 
   if citations_opt.nil?
-    citations = getcitations(title)
+    citations = getcitations(title, author)
   else
     citations = citations_opt
   end
@@ -78,7 +78,7 @@ def add(title, author, citations_opt, recommendations, rating, db)
                    :Goodreads_Reviews => goodreads_data[:ratings_count],
                    :Amazon_Rating => amazon_data[:avg_rating],
                    :Amazon_Reviews => amazon_data[:ratings_count],
-									 :Amazon_Book_Rank => amazon_data[:ranking],
+                   :Amazon_Book_Rank => amazon_data[:ranking],
                    :Rating => rating)
 end
 setauth('aPfKh3cgbelfhnkDgQLQ')
@@ -90,4 +90,3 @@ if not opts[:print] then
   add(opts[:title], opts[:author], opts[:citations], opts[:recommendations], opts[:rating], db)
 else
 end
-
